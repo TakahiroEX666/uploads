@@ -187,8 +187,9 @@
     card.innerHTML = `
       <button class="delete-btn" onclick="deleteFeeling('${feeling.id}')">✕</button>
       <div style="font-size: 0.85rem; color: #666;">🕒 ${createdTime}</div>
-      ${embed}
+      
       <div class="note-title">${feeling.title}</div>
+      ${embed}
     `;
     container.appendChild(card);
   });
