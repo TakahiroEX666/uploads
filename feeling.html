@@ -156,37 +156,44 @@
     }
 
     async function loadFeelings() {
-      const { data, error } = await supabase
-        .from('feelings')
-        .select('*')
-        .order('id', { ascending: false });
+  const { data, error } = await supabase
+    .from('feelings')
+    .select('*')
+    .order('id', { ascending: false });
 
-      if (error) return console.error(error);
+  if (error) return console.error(error);
 
-      const container = document.getElementById("notesContainer");
-      container.innerHTML = '';
+  const container = document.getElementById("notesContainer");
+  container.innerHTML = '';
 
-      data.forEach(feeling => {
-        const card = document.createElement("div");
-        card.className = "note-card";
+  data.forEach(feeling => {
+    const card = document.createElement("div");
+    card.className = "note-card";
 
-        const isYouTube = feeling.title.includes("youtube.com") || feeling.title.includes("youtu.be");
-        let embed = '';
-        if (isYouTube) {
-          const videoId = extractYouTubeID(feeling.title);
-          if (videoId) {
-            embed = `<iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
-          }
-        }
+    const createdTime = new Date(feeling.created_at).toLocaleString('th-TH', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    });
 
-        card.innerHTML = `
-          <button class="delete-btn" onclick="deleteFeeling('${feeling.id}')">✕</button>
-          <div class="note-title">${feeling.title}</div>
-          ${embed}
-        `;
-        container.appendChild(card);
-      });
+    const isYouTube = feeling.title.includes("youtube.com") || feeling.title.includes("youtu.be");
+    let embed = '';
+    if (isYouTube) {
+      const videoId = extractYouTubeID(feeling.title);
+      if (videoId) {
+        embed = `<iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+      }
     }
+
+    card.innerHTML = `
+      <button class="delete-btn" onclick="deleteFeeling('${feeling.id}')">✕</button>
+      <div class="note-title">${feeling.title}</div>
+      <div style="font-size: 0.85rem; color: #666;">🕒 ${createdTime}</div>
+      ${embed}
+    `;
+    container.appendChild(card);
+  });
+}
+
 
     function extractYouTubeID(url) {
       const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([^\s&?/]+)/);
