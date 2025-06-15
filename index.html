@@ -54,7 +54,6 @@
       card.className = "card";
       card.innerHTML = `
         <div class="timestamp">📅 ${new Date(item.created_at).toLocaleString()}</div>
-       
         <div class="note">📝 ${item.note}</div>
         <img src="${item.file_url}" class="preview-img" />
       `;
