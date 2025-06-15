@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>😊 Feeling Tracker</title>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f1f3f4;
+      max-width: 900px;
+      margin: auto;
+      padding: 2rem;
+    }
+
+    h2 {
+      text-align: center;
+      color: #ff6f00;
+    }
+
+    .note-form {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      margin-bottom: 2rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      margin-bottom: 0.5rem;
+    }
+
+    .emoji-buttons {
+      margin-bottom: 0.5rem;
+    }
+
+    .emoji-buttons button {
+      font-size: 1.5rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-right: 0.25rem;
+    }
+
+    button.save-btn {
+      background: #ff6f00;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .note-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      position: relative;
+    }
+
+    .note-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    iframe {
+      width: 100%;
+      height: 200px;
+      border-radius: 8px;
+      margin-top: 0.5rem;
+    }
+
+    .delete-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #e53935;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+  <h2>😊 Feeling Tracker</h2>
+
+  <div class="note-form">
+    <input type="text" id="titleInput" placeholder="คุณรู้สึกอย่างไร..." />
+    
+    <div class="emoji-buttons">
+      <button>😀</button>
+      <button>😢</button>
+      <button>😡</button>
+      <button>😍</button>
+      <button>😴</button>
+      <button>😱</button>
+      <button>😎</button>
+      <button>🤯</button>
+      <button>🥹</button>
+      <button>😇</button>
+    </div>
+
+    <button class="save-btn" onclick="saveFeeling()">💾 บันทึก</button>
+  </div>
+
+  <div id="notesContainer" class="notes-grid"></div>
+
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://fkntlawaawawiusmjsez.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbnRsYXdhYXdhd2l1c21qc2V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODcxMjAsImV4cCI6MjA2NTU2MzEyMH0.G-_fLzcpvPla3dUYNCV7qh0j-JHo1Ahr5fS7fQkHdpw'
+    );
+
+    document.querySelectorAll(".emoji-buttons button").forEach(btn => {
+      btn.onclick = () => {
+        const input = document.getElementById("titleInput");
+        input.value += btn.textContent;
+        input.focus();
+      }
+    });
+
+    async function saveFeeling() {
+      const title = document.getElementById("titleInput").value.trim();
+      if (!title) return alert("กรุณากรอกความรู้สึก");
+
+      await supabase.from('feelings').insert({ title });
+      document.getElementById("titleInput").value = '';
+      loadFeelings();
+    }
+
+    async function deleteFeeling(id) {
+      if (confirm("คุณต้องการลบความรู้สึกนี้หรือไม่?")) {
+        await supabase.from('feelings').delete().eq('id', id);
+        loadFeelings();
+      }
+    }
+
+    async function loadFeelings() {
+      const { data, error } = await supabase
+        .from('feelings')
+        .select('*')
+        .order('id', { ascending: false });
+
+      if (error) return console.error(error);
+
+      const container = document.getElementById("notesContainer");
+      container.innerHTML = '';
+
+      data.forEach(feeling => {
+        const card = document.createElement("div");
+        card.className = "note-card";
+
+        const isYouTube = feeling.title.includes("youtube.com") || feeling.title.includes("youtu.be");
+        let embed = '';
+        if (isYouTube) {
+          const videoId = extractYouTubeID(feeling.title);
+          if (videoId) {
+            embed = `<iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+          }
+        }
+
+        card.innerHTML = `
+          <button class="delete-btn" onclick="deleteFeeling('${feeling.id}')">✕</button>
+          <div class="note-title">${feeling.title}</div>
+          ${embed}
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function extractYouTubeID(url) {
+      const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([^\s&?/]+)/);
+      return match ? match[1] : '';
+    }
+
+    window.addEventListener('DOMContentLoaded', loadFeelings);
+  </script>
+</body>
+</html>
