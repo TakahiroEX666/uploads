@@ -1,0 +1,80 @@
+<body>
+  <h2>📒 Markdown Notes</h2>
+
+  <!-- ฟอร์มเขียนโน้ต -->
+  <div class="note-form">
+    <input type="text" id="titleInput" placeholder="หัวข้อโน้ต" />
+    <textarea id="contentInput" placeholder="เขียนโน้ตด้วย Markdown..."></textarea>
+    <button onclick="saveNote()">💾 บันทึก</button>
+  </div>
+
+  <!-- พื้นที่แสดงโน้ต -->
+  <div id="notesContainer" class="notes-grid"></div>
+
+  <!-- Supabase & Markdown JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- JavaScript Logic -->
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://fkntlawaawawiusmjsez.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbnRsYXdhYXdhd2l1c21qc2V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODcxMjAsImV4cCI6MjA2NTU2MzEyMH0.G-_fLzcpvPla3dUYNCV7qh0j-JHo1Ahr5fS7fQkHdpw'
+    );
+
+    async function loadNotes() {
+      const { data, error } = await supabase.from('notes').select('*').order('updated_at', { ascending: false });
+      if (error) return console.error(error);
+      const container = document.getElementById("notesContainer");
+      container.innerHTML = '';
+      data.forEach(note => container.appendChild(renderNoteCard(note)));
+    }
+
+    function renderNoteCard(note) {
+      const card = document.createElement("div");
+      card.className = "note-card";
+      card.innerHTML = `
+        <div class="note-title">${note.title}</div>
+        <div class="note-html">${marked.parse(note.content)}</div>
+        <div>
+          <button onclick="editNote('${note.id}', \`${note.title}\`, \`${note.content}\`)">✏ แก้ไข</button>
+          <button onclick="deleteNote('${note.id}')" style="background:#c62828;">🗑 ลบ</button>
+        </div>
+      `;
+      return card;
+    }
+
+    async function saveNote() {
+      const title = document.getElementById("titleInput").value;
+      const content = document.getElementById("contentInput").value;
+      if (!content.trim()) return alert("กรุณาเขียนเนื้อหาโน้ต");
+
+      if (window.editingNoteId) {
+        await supabase.from('notes').update({ title, content }).eq('id', window.editingNoteId);
+        window.editingNoteId = null;
+      } else {
+        await supabase.from('notes').insert({ title, content });
+      }
+
+      document.getElementById("titleInput").value = '';
+      document.getElementById("contentInput").value = '';
+      loadNotes();
+    }
+
+    function editNote(id, title, content) {
+      document.getElementById("titleInput").value = title;
+      document.getElementById("contentInput").value = content;
+      window.editingNoteId = id;
+      window.scrollTo(0, 0);
+    }
+
+    async function deleteNote(id) {
+      if (confirm("แน่ใจหรือไม่ว่าต้องการลบ?")) {
+        await supabase.from('notes').delete().eq('id', id);
+        loadNotes();
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadNotes);
+  </script>
+</body>
