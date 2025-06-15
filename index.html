@@ -1,92 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Simple Upload Log</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/index.min.js"></script>
-  <style>
-    body { font-family: sans-serif; background: #f0f2f5; padding: 2rem; max-width: 600px; margin: auto; }
-    .card { background: white; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .timestamp { color: #888; font-size: 0.9rem; }
-    .note { margin-top: 0.5rem; }
-    .preview-img { max-width: 100%; border-radius: 8px; margin-top: 0.5rem; }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Simple Upload Log</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #f0f2f5; padding: 2rem; max-width: 600px; margin: auto; }
+    .card { background: white; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .timestamp { color: #888; font-size: 0.9rem; }
+    .note { margin-top: 0.5rem; }
+    .preview-img { max-width: 100%; border-radius: 8px; margin-top: 0.5rem; }
+  </style>
 </head>
 <body>
 
-  <h2>📤 Upload File Log</h2>
-  <div class="card">
-    <input type="file" id="fileInput" /><br><br>
-    <textarea id="noteInput" rows="3" placeholder="เขียนโน้ตเกี่ยวกับไฟล์นี้..." style="width: 100%;"></textarea><br><br>
-    <button onclick="upload()">Upload</button>
-  </div>
+  <h2>📤 Upload File Log</h2>
+  <div class="card">
+    <input type="file" id="fileInput" /><br><br>
+    <textarea id="noteInput" rows="3" placeholder="เขียนโน้ตเกี่ยวกับไฟล์นี้..." style="width: 100%;"></textarea><br><br>
+    <button onclick="upload()">Upload</button>
+  </div>
 
-  <h3>📁 Uploaded Logs</h3>
-  <div id="logArea"></div>
+  <h3>📁 Uploaded Logs</h3>
+  <div id="logArea"></div>
 
-  <script>
-    const supabaseUrl = 'https://fkntlawaawawiusmjsez.supabase.co'
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbnRsYXdhYXdhd2l1c21qc2V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODcxMjAsImV4cCI6MjA2NTU2MzEyMH0.G-_fLzcpvPla3dUYNCV7qh0j-JHo1Ahr5fS7fQkHdpw'
-    const supabase = Supabase.createClient(supabaseUrl, supabaseKey) // ✅ ถูก
-    
-    const logArea = document.getElementById("logArea")
-    async function loadUploads() {
-      const { data, error } = await supabase
-        .from('uploads')
-        .select('*')
-        .order('created_at', { ascending: false })
-      if (error) return console.error(error)
-      logArea.innerHTML = ''
-      data.forEach(renderItem)
-    }
+  <script>
+    const supabaseUrl = 'https://fkntlawaawawiusmjsez.supabase.co'
+    const supabaseKey = 'YOUR_KEY'
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey)
 
-    function renderItem(item) {
-      const card = document.createElement("div")
-      card.className = "card"
-      card.innerHTML = `
-        <div><strong>${item.file_name}</strong></div>
-        <div class="note">📝 ${item.note}</div>
-        <img src="${item.file_url}" class="preview-img" />
-        <div class="timestamp">📅 ${new Date(item.created_at).toLocaleString()}</div>
-      `
-      logArea.appendChild(card)
-    }
+    const logArea = document.getElementById("logArea")
+    async function loadUploads() {
+      const { data, error } = await supabase
+        .from('uploads')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (error) return console.error(error)
+      logArea.innerHTML = ''
+      data.forEach(renderItem)
+    }
 
-    async function upload() {
-      const file = document.getElementById("fileInput").files[0]
-      const note = document.getElementById("noteInput").value
-      if (!file) return alert("กรุณาเลือกไฟล์")
-      const path = `${Date.now()}_${file.name}`
+    function renderItem(item) {
+      const card = document.createElement("div")
+      card.className = "card"
+      card.innerHTML = `
+        <div><strong>${item.file_name}</strong></div>
+        <div class="note">📝 ${item.note}</div>
+        <img src="${item.file_url}" class="preview-img" />
+        <div class="timestamp">📅 ${new Date(item.created_at).toLocaleString()}</div>
+      `
+      logArea.appendChild(card)
+    }
 
-      const { data: uploadData, error: uploadError } = await supabase
-        .storage
-        .from('uploads')
-        .upload(path, file)
-      if (uploadError) return console.error(uploadError)
+    async function upload() {
+      const file = document.getElementById("fileInput").files[0]
+      const note = document.getElementById("noteInput").value
+      if (!file) return alert("กรุณาเลือกไฟล์")
+      const path = `${Date.now()}_${file.name}`
 
-      const { publicUrl, error: urlError } = supabase
-        .storage
-        .from('uploads')
-        .getPublicUrl(path)
-      if (urlError) return console.error(urlError)
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('uploads')
+        .upload(path, file)
+      if (uploadError) return console.error(uploadError)
 
-      const { data, error: insertError } = await supabase
-        .from('uploads')
-        .insert({
-          file_name: file.name,
-          file_url: publicUrl,
-          note
-        })
-      if (insertError) return console.error(insertError)
+      const { publicURL, error: urlError } = supabase
+        .storage
+        .from('uploads')
+        .getPublicUrl(path)
+      if (urlError) return console.error(urlError)
 
-      document.getElementById("fileInput").value = ""
-      document.getElementById("noteInput").value = ""
-      loadUploads()
-    }
+      const { error: insertError } = await supabase
+        .from('uploads')
+        .insert({
+          file_name: file.name,
+          file_url: publicURL.publicURL,
+          note
+        })
+      if (insertError) return console.error(insertError)
 
-    loadUploads()
-  </script>
+      document.getElementById("fileInput").value = ""
+      document.getElementById("noteInput").value = ""
+      loadUploads()
+    }
+
+    loadUploads()
+  </script>
 
 </body>
 </html>
