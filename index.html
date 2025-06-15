@@ -77,45 +77,44 @@
     }
 
     async function upload() {
-  const file = document.getElementById("fileInput").files[0]
-  const note = document.getElementById("noteInput").value
-  if (!file) return alert("กรุณาเลือกไฟล์")
+      const file = document.getElementById("fileInput").files[0];
+      const note = document.getElementById("noteInput").value;
+      if (!file) return alert("กรุณาเลือกไฟล์");
 
-  const path = `${Date.now()}_${file.name}`
+      const path = `${Date.now()}_${file.name}`;
 
-  // 📦 Upload ไปที่ bucket
-  const { data: uploadData, error: uploadError } = await supabase
-    .storage
-    .from('uploads')
-    .upload(path, file)
-  if (uploadError) return console.error("❌ Upload Error:", uploadError)
+      // 📦 Upload ไปที่ bucket
+      const { data: uploadData, error: uploadError } = await client
+        .storage
+        .from('uploads')
+        .upload(path, file);
+      if (uploadError) return console.error("❌ Upload Error:", uploadError);
 
-  // 🌐 Get Public URL
-  const { data: urlData, error: urlError } = supabase
-    .storage
-    .from('uploads')
-    .getPublicUrl(path)
-  if (urlError) return console.error("❌ URL Error:", urlError)
+      // 🌐 Get Public URL
+      const { data: urlData, error: urlError } = client
+        .storage
+        .from('uploads')
+        .getPublicUrl(path);
+      if (urlError) return console.error("❌ URL Error:", urlError);
 
-  const publicUrl = urlData.publicUrl
-  console.log("📸 File URL =", publicUrl)
+      const publicUrl = urlData.publicUrl;
+      console.log("📸 File URL =", publicUrl);
 
-  // 📝 Insert ข้อมูลเข้า Table
-  const { data, error: insertError } = await supabase
-    .from('uploads')
-    .insert({
-      file_name: file.name,
-      file_url: publicUrl,
-      note
-    })
-  if (insertError) return console.error("❌ Insert Error:", insertError)
+      // 📝 Insert ข้อมูลเข้า Table
+      const { data, error: insertError } = await client
+        .from('uploads')
+        .insert({
+          file_name: file.name,
+          file_url: publicUrl,
+          note
+        });
+      if (insertError) return console.error("❌ Insert Error:", insertError);
 
-  // 🧹 Clear form + reload
-  document.getElementById("fileInput").value = ""
-  document.getElementById("noteInput").value = ""
-  loadUploads()
-}
-
+      // 🧹 Clear form + reload
+      document.getElementById("fileInput").value = "";
+      document.getElementById("noteInput").value = "";
+      loadUploads();
+    }
 
     loadUploads();
   </script>
