@@ -119,8 +119,8 @@
       const { data, error } = await supabase
         .from('notes')
         .select('*')
-        .order('updated_at', { ascending: false });
-
+        .order('id', { ascending: false }); // ใช้ id แทน
+        
       if (error) return console.error(error);
       const container = document.getElementById("notesContainer");
       container.innerHTML = '';
