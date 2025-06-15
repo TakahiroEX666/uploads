@@ -1,3 +1,100 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>📒 Markdown Notes</title>
+
+  <!-- ✅ CSS ในตัว -->
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f1f3f4;
+      margin: 0;
+      padding: 2rem;
+      max-width: 900px;
+      margin: auto;
+      color: #333;
+    }
+
+    h2 {
+      text-align: center;
+      color: #6200ee;
+    }
+
+    .note-form {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      margin-bottom: 2rem;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 1rem;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+
+    button {
+      background: #6200ee;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      margin-top: 0.75rem;
+    }
+
+    button:hover {
+      background: #4b00b3;
+    }
+
+    .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .note-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .note-title {
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+      color: #37474f;
+    }
+
+    .note-html {
+      flex: 1;
+      font-size: 0.95rem;
+      color: #444;
+      margin-bottom: 0.75rem;
+    }
+
+    .note-card button {
+      margin-right: 0.5rem;
+    }
+  </style>
+
+  <!-- ✅ Markdown & Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
 <body>
   <h2>📒 Markdown Notes</h2>
 
@@ -11,11 +108,7 @@
   <!-- พื้นที่แสดงโน้ต -->
   <div id="notesContainer" class="notes-grid"></div>
 
-  <!-- Supabase & Markdown JS -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-  <!-- JavaScript Logic -->
+  <!-- ✅ JavaScript Logic -->
   <script>
     const supabase = window.supabase.createClient(
       'https://fkntlawaawawiusmjsez.supabase.co',
@@ -23,7 +116,11 @@
     );
 
     async function loadNotes() {
-      const { data, error } = await supabase.from('notes').select('*').order('updated_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .order('updated_at', { ascending: false });
+
       if (error) return console.error(error);
       const container = document.getElementById("notesContainer");
       container.innerHTML = '';
@@ -65,7 +162,7 @@
       document.getElementById("titleInput").value = title;
       document.getElementById("contentInput").value = content;
       window.editingNoteId = id;
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     async function deleteNote(id) {
@@ -78,3 +175,4 @@
     window.addEventListener('DOMContentLoaded', loadNotes);
   </script>
 </body>
+</html>
