@@ -91,13 +91,14 @@
       if (uploadError) return console.error("❌ Upload Error:", uploadError);
 
       // 🌐 Get Public URL
-      const { data: urlData, error: urlError } = client
-        .storage
-        .from('uploads')
-        .getPublicUrl(path);
-      if (urlError) return console.error("❌ URL Error:", urlError);
+      const { publicURL, error: urlError } = client
+        .storage
+        .from('uploads')
+        .getPublicUrl(path);
+      if (urlError) return console.error("❌ URL Error:", urlError);
 
-      const publicUrl = urlData.publicUrl;
+      const publicUrl = publicURL;
+
       console.log("📸 File URL =", publicUrl);
 
       // 📝 Insert ข้อมูลเข้า Table
