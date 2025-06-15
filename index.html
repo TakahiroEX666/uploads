@@ -25,68 +25,85 @@
   <h3>📁 Uploaded Logs</h3>
   <div id="logArea"></div>
 
+
+
+
+
+  
+
   <script>
-    const supabaseUrl = 'https://fkntlawaawawiusmjsez.supabase.co'
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbnRsYXdhYXdhd2l1c21qc2V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODcxMjAsImV4cCI6MjA2NTU2MzEyMH0.G-_fLzcpvPla3dUYNCV7qh0j-JHo1Ahr5fS7fQkHdpw'
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey)
+    const supabaseUrl = 'https://fkntlawaawawiusmjsez.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbnRsYXdhYXdhd2l1c21qc2V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODcxMjAsImV4cCI6MjA2NTU2MzEyMH0.G-_fLzcpvPla3dUYNCV7qh0j-JHo1Ahr5fS7fQkHdpw';
+    const client = supabase.createClient(supabaseUrl, supabaseKey);
 
-    const logArea = document.getElementById("logArea")
-    async function loadUploads() {
-      const { data, error } = await supabase
-        .from('uploads')
-        .select('*')
-        .order('created_at', { ascending: false })
-      if (error) return console.error(error)
-      logArea.innerHTML = ''
-      data.forEach(renderItem)
-    }
+    const logArea = document.getElementById("logArea");
 
-    function renderItem(item) {
-      const card = document.createElement("div")
-      card.className = "card"
-      card.innerHTML = `
-        <div><strong>${item.file_name}</strong></div>
-        <div class="note">📝 ${item.note}</div>
-        <img src="${item.file_url}" class="preview-img" />
-        <div class="timestamp">📅 ${new Date(item.created_at).toLocaleString()}</div>
-      `
-      logArea.appendChild(card)
-    }
+    async function loadUploads() {
+      const { data, error } = await client
+        .from('uploads')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    async function upload() {
-      const file = document.getElementById("fileInput").files[0]
-      const note = document.getElementById("noteInput").value
-      if (!file) return alert("กรุณาเลือกไฟล์")
-      const path = `${Date.now()}_${file.name}`
+      if (error) return console.error(error);
+      logArea.innerHTML = '';
+      data.forEach(renderItem);
+    }
 
-      const { data: uploadData, error: uploadError } = await supabase
-        .storage
-        .from('uploads')
-        .upload(path, file)
-      if (uploadError) return console.error(uploadError)
+    function renderItem(item) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div><strong>${item.file_name}</strong></div>
+        <div class="note">📝 ${item.note}</div>
+        <img src="${item.file_url}" class="preview-img" />
+        <div class="timestamp">📅 ${new Date(item.created_at).toLocaleString()}</div>
+      `;
+      logArea.appendChild(card);
+    }
 
-      const { publicUrl, error: urlError } = supabase
-        .storage
-        .from('uploads')
-        .getPublicUrl(path)
-      if (urlError) return console.error(urlError)
+    async function upload() {
+      const file = document.getElementById("fileInput").files[0];
+      const note = document.getElementById("noteInput").value;
+      if (!file) return alert("กรุณาเลือกไฟล์");
 
-      const { data, error: insertError } = await supabase
-        .from('uploads')
-        .insert({
-          file_name: file.name,
-          file_url: publicUrl,
-          note
-        })
-      if (insertError) return console.error(insertError)
+      const path = `${Date.now()}_${file.name}`;
 
-      document.getElementById("fileInput").value = ""
-      document.getElementById("noteInput").value = ""
-      loadUploads()
-    }
+      // 📦 Upload ไปที่ bucket
+      const { data: uploadData, error: uploadError } = await client
+        .storage
+        .from('uploads')
+        .upload(path, file);
+      if (uploadError) return console.error("❌ Upload Error:", uploadError);
 
-    loadUploads()
-  </script>
+      // 🌐 Get Public URL
+      const { publicURL, error: urlError } = client
+        .storage
+        .from('uploads')
+        .getPublicUrl(path);
+      if (urlError) return console.error("❌ URL Error:", urlError);
+
+      const publicUrl = publicURL;
+
+      console.log("📸 File URL =", publicUrl);
+
+      // 📝 Insert ข้อมูลเข้า Table
+      const { data, error: insertError } = await client
+        .from('uploads')
+        .insert({
+          file_name: file.name,
+          file_url: publicUrl,
+          note
+        });
+      if (insertError) return console.error("❌ Insert Error:", insertError);
+
+      // 🧹 Clear form + reload
+      document.getElementById("fileInput").value = "";
+      document.getElementById("noteInput").value = "";
+      loadUploads();
+    }
+
+    loadUploads();
+  </script>
 
 </body>
 </html>
