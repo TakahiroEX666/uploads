@@ -55,7 +55,6 @@
       card.innerHTML =
       `<div class="timestamp">📅 ${new Date(item.created_at).toLocaleString()}</div>` +
       `<div class="note">📝 ${item.note}</div>` +
-      `<br></br>`+
       `<img src="${item.file_url}" class="preview-img" />`;
       logArea.appendChild(card);
     }
