@@ -57,18 +57,18 @@
 
   <script>
    
-    const supabase = supabase.createClient(
+    const supabaseClient  = supabase.createClient(
       'https://fkntlawaawawiusmjsez.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbnRsYXdhYXdhd2l1c21qc2V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODcxMjAsImV4cCI6MjA2NTU2MzEyMH0.G-_fLzcpvPla3dUYNCV7qh0j-JHo1Ahr5fS7fQkHdpw'
     );
 
     
-    /*let accounts = [];
+    let accounts = [];
     let selectedCategory = '';
     let selectedDomain = '';
 
     async function loadAccounts() {
-      const { data, error } = await supabase.from("accounts").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabaseClient.from("accounts").select("*").order("created_at", { ascending: false });
       if (error) return console.error(error);
       accounts = data;
       renderFilters();
@@ -160,7 +160,7 @@
       renderAccounts();
     }
 
-    loadAccounts();*/
+    loadAccounts();
   </script>
 
 </body>
