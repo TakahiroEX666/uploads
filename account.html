@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>Account Manager</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
   <style>
     body { font-family: sans-serif; background: #f0f2f5; padding: 2rem; max-width: 700px; margin: auto; }
     .card { background: white; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -23,28 +22,28 @@
   <div class="card">
     <label>🌐 Domain</label>
     <input id="domainInput" placeholder="facebook, github...">
-    
+
     <label>🏷️ Category</label>
     <input id="categoryInput" placeholder="งาน, ส่วนตัว, ลูกค้า...">
-    
+
     <label>🆔 ID</label>
     <input id="idInput" placeholder="username or email">
-    
+
     <label>🔑 Password</label>
     <input id="passInput" placeholder="password">
-    
+
     <label>📛 Account Name</label>
     <input id="nameInput" placeholder="ชื่อบัญชี เช่น บัญชีหลัก">
-    
+
     <label>📝 Description</label>
     <textarea id="descInput" rows="2" placeholder="รายละเอียด"></textarea>
-    
+
     <label>📶 Status</label>
     <select id="statusInput">
       <option value="active">🟢 ใช้งาน</option>
       <option value="inactive">🔴 ไม่ใช้งาน</option>
     </select>
-    
+
     <button onclick="addAccount()">➕ Add Account</button>
   </div>
 
@@ -55,21 +54,30 @@
 
   <div id="accountList"></div>
 
-  <script>
-   
-    const supabaseClient  = supabase.createClient(
-      'https://fkntlawaawawiusmjsez.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbnRsYXdhYXdhd2l1c21qc2V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODcxMjAsImV4cCI6MjA2NTU2MzEyMH0.G-_fLzcpvPla3dUYNCV7qh0j-JHo1Ahr5fS7fQkHdpw'
+  <!-- Supabase JS SDK v2 -->
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
+      "https://fkntlawaawawiusmjsez.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbnRsYXdhYXdhd2l1c21qc2V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODcxMjAsImV4cCI6MjA2NTU2MzEyMH0.G-_fLzcpvPla3dUYNCV7qh0j-JHo1Ahr5fS7fQkHdpw"
     );
 
-    
     let accounts = [];
     let selectedCategory = '';
     let selectedDomain = '';
 
     async function loadAccounts() {
-      const { data, error } = await supabaseClient.from("accounts").select("*").order("created_at", { ascending: false });
-      if (error) return console.error(error);
+      const { data, error } = await supabase
+        .from("accounts")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
       accounts = data;
       renderFilters();
       renderAccounts();
@@ -87,8 +95,8 @@
         chip.innerText = cat || "(ไม่ระบุ)";
         chip.onclick = () => {
           selectedCategory = selectedCategory === cat ? '' : cat;
-          renderAccounts();
           renderFilters();
+          renderAccounts();
         };
         catArea.appendChild(chip);
       });
@@ -101,8 +109,8 @@
         chip.innerText = dom || "(ไม่ระบุ)";
         chip.onclick = () => {
           selectedDomain = selectedDomain === dom ? '' : dom;
-          renderAccounts();
           renderFilters();
+          renderAccounts();
         };
         domainArea.appendChild(chip);
       });
@@ -115,11 +123,11 @@
       accounts
         .filter(a => (!selectedCategory || a.category === selectedCategory))
         .filter(a => (!selectedDomain || a.domain === selectedDomain))
-        .filter(a => (
+        .filter(a =>
           (a.account_name || "").toLowerCase().includes(keyword) ||
           (a.description || "").toLowerCase().includes(keyword) ||
           (a.domain || "").toLowerCase().includes(keyword)
-        ))
+        )
         .forEach(a => {
           const card = document.createElement("div");
           card.className = `card ${a.status === 'inactive' ? 'inactive' : ''}`;
@@ -147,19 +155,25 @@
 
       if (!domain || !account_id || !password) return alert("กรุณากรอกข้อมูลสำคัญ");
 
-      const { data, error } = await supabaseClient.from("accounts").insert([
+      const { error } = await supabase.from("accounts").insert([
         { domain, category, account_id, password, account_name, description, status }
       ]);
-      if (error) return alert("❌ บันทึกล้มเหลว");
 
-      ["domainInput", "categoryInput", "idInput", "passInput", "nameInput", "descInput"].forEach(id => document.getElementById(id).value = "");
-      loadAccounts();
+      if (error) return alert("❌ บันทึกล้มเหลว: " + error.message);
+
+      // Clear input fields
+      ["domainInput", "categoryInput", "idInput", "passInput", "nameInput", "descInput"].forEach(id => {
+        document.getElementById(id).value = "";
+      });
+
+      await loadAccounts();
     }
 
     function filterAccounts() {
       renderAccounts();
     }
 
+    // Initial load
     loadAccounts();
   </script>
 
