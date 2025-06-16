@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Account Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #f0f2f5; padding: 2rem; max-width: 700px; margin: auto; }
+    .card { background: white; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .card.inactive { background: #ffe6e6; }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; }
+    .chip { background: #ddd; border-radius: 20px; padding: 0.3rem 0.8rem; cursor: pointer; }
+    .chip.active { background: #007bff; color: white; }
+    input, textarea, select { width: 100%; margin-top: 0.5rem; padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc; }
+    button { padding: 0.5rem 1rem; margin-top: 1rem; border: none; border-radius: 6px; background: #007bff; color: white; cursor: pointer; }
+    .search-bar { margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+
+  <h2>🔐 Add New Account</h2>
+  <div class="card">
+    <label>🌐 Domain</label>
+    <input id="domainInput" placeholder="facebook, github...">
+    
+    <label>🏷️ Category</label>
+    <input id="categoryInput" placeholder="งาน, ส่วนตัว, ลูกค้า...">
+    
+    <label>🆔 ID</label>
+    <input id="idInput" placeholder="username or email">
+    
+    <label>🔑 Password</label>
+    <input id="passInput" placeholder="password">
+    
+    <label>📛 Account Name</label>
+    <input id="nameInput" placeholder="ชื่อบัญชี เช่น บัญชีหลัก">
+    
+    <label>📝 Description</label>
+    <textarea id="descInput" rows="2" placeholder="รายละเอียด"></textarea>
+    
+    <label>📶 Status</label>
+    <select id="statusInput">
+      <option value="active">🟢 ใช้งาน</option>
+      <option value="inactive">🔴 ไม่ใช้งาน</option>
+    </select>
+    
+    <button onclick="addAccount()">➕ Add Account</button>
+  </div>
+
+  <h3>📁 Filter</h3>
+  <div class="chips" id="categoryFilters"></div>
+  <div class="chips" id="domainFilters"></div>
+  <input class="search-bar" type="text" placeholder="🔍 ค้นหา..." oninput="filterAccounts()" id="searchInput"/>
+
+  <div id="accountList"></div>
+
+  <script>
+    const supabase = supabase.createClient("https://YOUR_PROJECT.supabase.co", "YOUR_ANON_KEY");
+
+    let accounts = [];
+    let selectedCategory = '';
+    let selectedDomain = '';
+
+    async function loadAccounts() {
+      const { data, error } = await supabase.from("accounts").select("*").order("created_at", { ascending: false });
+      if (error) return console.error(error);
+      accounts = data;
+      renderFilters();
+      renderAccounts();
+    }
+
+    function renderFilters() {
+      const catSet = [...new Set(accounts.map(a => a.category || ""))];
+      const domainSet = [...new Set(accounts.map(a => a.domain || ""))];
+
+      const catArea = document.getElementById("categoryFilters");
+      catArea.innerHTML = '';
+      catSet.forEach(cat => {
+        const chip = document.createElement("div");
+        chip.className = `chip ${selectedCategory === cat ? 'active' : ''}`;
+        chip.innerText = cat || "(ไม่ระบุ)";
+        chip.onclick = () => {
+          selectedCategory = selectedCategory === cat ? '' : cat;
+          renderAccounts();
+          renderFilters();
+        };
+        catArea.appendChild(chip);
+      });
+
+      const domainArea = document.getElementById("domainFilters");
+      domainArea.innerHTML = '';
+      domainSet.forEach(dom => {
+        const chip = document.createElement("div");
+        chip.className = `chip ${selectedDomain === dom ? 'active' : ''}`;
+        chip.innerText = dom || "(ไม่ระบุ)";
+        chip.onclick = () => {
+          selectedDomain = selectedDomain === dom ? '' : dom;
+          renderAccounts();
+          renderFilters();
+        };
+        domainArea.appendChild(chip);
+      });
+    }
+
+    function renderAccounts() {
+      const keyword = document.getElementById("searchInput").value.toLowerCase();
+      const area = document.getElementById("accountList");
+      area.innerHTML = '';
+      accounts
+        .filter(a => (!selectedCategory || a.category === selectedCategory))
+        .filter(a => (!selectedDomain || a.domain === selectedDomain))
+        .filter(a => (
+          (a.account_name || "").toLowerCase().includes(keyword) ||
+          (a.description || "").toLowerCase().includes(keyword) ||
+          (a.domain || "").toLowerCase().includes(keyword)
+        ))
+        .forEach(a => {
+          const card = document.createElement("div");
+          card.className = `card ${a.status === 'inactive' ? 'inactive' : ''}`;
+          card.innerHTML = `
+            <strong>🌐 ${a.domain}</strong><br/>
+            🏷️ ${a.category || "-"}<br/>
+            🆔 ${a.account_id}<br/>
+            🔑 ${a.password}<br/>
+            📛 ${a.account_name}<br/>
+            📝 ${a.description}<br/>
+            📶 Status: ${a.status}
+          `;
+          area.appendChild(card);
+        });
+    }
+
+    async function addAccount() {
+      const domain = document.getElementById("domainInput").value.trim();
+      const category = document.getElementById("categoryInput").value.trim();
+      const account_id = document.getElementById("idInput").value.trim();
+      const password = document.getElementById("passInput").value.trim();
+      const account_name = document.getElementById("nameInput").value.trim();
+      const description = document.getElementById("descInput").value.trim();
+      const status = document.getElementById("statusInput").value;
+
+      if (!domain || !account_id || !password) return alert("กรุณากรอกข้อมูลสำคัญ");
+
+      const { data, error } = await supabase.from("accounts").insert([
+        { domain, category, account_id, password, account_name, description, status }
+      ]);
+      if (error) return alert("❌ บันทึกล้มเหลว");
+
+      ["domainInput", "categoryInput", "idInput", "passInput", "nameInput", "descInput"].forEach(id => document.getElementById(id).value = "");
+      loadAccounts();
+    }
+
+    function filterAccounts() {
+      renderAccounts();
+    }
+
+    loadAccounts();
+  </script>
+
+</body>
+</html>
