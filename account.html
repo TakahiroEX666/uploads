@@ -147,7 +147,7 @@
 
       if (!domain || !account_id || !password) return alert("กรุณากรอกข้อมูลสำคัญ");
 
-      const { data, error } = await supabase.from("accounts").insert([
+      const { data, error } = await supabaseClient.from("accounts").insert([
         { domain, category, account_id, password, account_name, description, status }
       ]);
       if (error) return alert("❌ บันทึกล้มเหลว");
