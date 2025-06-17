@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <title>ความรู้สึกของคุณ</title>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Feeling Note</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
       background: #f1f3f4;
       max-width: 900px;
       margin: auto;
-      padding: 2rem;
-      padding-bottom: 220px; /* เผื่อพื้นที่ให้ input ล่าง */
+      padding: 2rem 1rem 6rem; /* เผื่อด้านล่างให้กล่อง input ลอยได้ */
+      box-sizing: border-box;
     }
 
     h2 {
@@ -19,23 +19,22 @@
       color: #ff6f00;
     }
 
-
-
-
-
-    
-    .chat-input {
-  background: #fff;
-  padding: 1rem;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
-  max-width: 900px;
-  margin: auto;
-  width: 100%;
+    .note-form {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      padding: 1rem;
+      box-shadow: 0 -4px 10px rgba(0,0,0,0.08);
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+      max-width: 900px;
+      margin: auto;
+      box-sizing: border-box;
     }
 
-    .chat-input input {
+    input {
       width: 100%;
       box-sizing: border-box;
       padding: 0.75rem;
@@ -45,28 +44,31 @@
       margin-bottom: 0.5rem;
     }
 
-    .chat-input .emoji-buttons {
+    .emoji-buttons {
+      display: flex;
       overflow-x: auto;
-      white-space: nowrap;
+      gap: 0.5rem;
       margin-bottom: 0.5rem;
+      padding-bottom: 0.25rem;
     }
 
-    .chat-input .emoji-buttons button {
+    .emoji-buttons button {
       font-size: 1.5rem;
       background: none;
       border: none;
       cursor: pointer;
-      margin-right: 0.25rem;
+      flex-shrink: 0;
     }
 
-    .chat-input .save-btn {
+    button.save-btn {
       background: #ff6f00;
       color: white;
       border: none;
       padding: 0.6rem 1.2rem;
       border-radius: 8px;
       cursor: pointer;
-      float: right;
+      width: 100%;
+      font-size: 1rem;
     }
 
     .notes-grid {
@@ -87,6 +89,7 @@
       font-size: 1.2rem;
       font-weight: bold;
       margin-bottom: 0.5rem;
+      word-wrap: break-word;
     }
 
     iframe {
@@ -110,49 +113,30 @@
       cursor: pointer;
     }
   </style>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 
   <h2>บันทึกความรู้สึกของคุณ</h2>
-
   <div id="notesContainer" class="notes-grid"></div>
 
-
-
-
-<!-- Wrapper ให้ fixed bar อยู่ในกรอบ -->
-<div style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 999; background: #f1f3f4;">
-  <div class="chat-input">
+  <div class="note-form">
     <input type="text" id="titleInput" placeholder="คุณรู้สึกอย่างไร..." />
-    
+
     <div class="emoji-buttons">
-      <button>😊</button>
-      <button>😢</button>
-      <button>😭</button>
-      <button>😡</button>
-      <button>😍</button>
-      <button>😴</button>
-      <button>🥹</button>
-      <button>😂</button>
-      <button>🥰</button>
+      <button>😊</button><button>😢</button><button>😭</button>
+      <button>😡</button><button>😍</button><button>😴</button>
+      <button>🥹</button><button>😂</button><button>🥰</button>
     </div>
 
     <button class="save-btn" onclick="saveFeeling()">💾 บันทึก</button>
   </div>
-</div>
-  
 
-
-
-
-  
-  
   <script>
     const supabase = window.supabase.createClient(
       'https://fkntlawaawawiusmjsez.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbnRsYXdhYXdhd2l1c21qc2V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODcxMjAsImV4cCI6MjA2NTU2MzEyMH0.G-_fLzcpvPla3dUYNCV7qh0j-JHo1Ahr5fS7fQkHdpw'
+    
     );
 
     document.querySelectorAll(".emoji-buttons button").forEach(btn => {
@@ -210,7 +194,7 @@
 
         card.innerHTML = `
           <button class="delete-btn" onclick="deleteFeeling('${feeling.id}')">✕</button>
-          <div style="font-size: 0.85rem; color: #666;">🕒 ${createdTime}<br></br></div>
+          <div style="font-size: 0.85rem; color: #666;">🕒 ${createdTime}</div>
           <div class="note-title">${feeling.title}</div>
           ${embed}
         `;
