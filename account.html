@@ -5,56 +5,131 @@
   <title>Account Manager</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
-    body { font-family: sans-serif; background: #f0f2f5; padding: 2rem; max-width: 700px; margin: auto; }
-    .card { background: white; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .card.inactive { background: #ffe6e6; }
-    .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; }
-    .chip { background: #ddd; border-radius: 20px; padding: 0.3rem 0.8rem; cursor: pointer; }
-    .chip.active { background: #007bff; color: white; }
-    input, textarea, select { width: 100%; margin-top: 0.5rem; padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc; }
-    button { padding: 0.5rem 1rem; margin-top: 1rem; border: none; border-radius: 6px; background: #007bff; color: white; cursor: pointer; }
-    .search-bar { margin-bottom: 1rem; }
+    body {
+      font-family: sans-serif;
+      background: #ddd;
+      margin: 0;
+      padding: 1rem;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .card.inactive {
+      background: #f8c7c7;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .chip {
+      background: #ccc;
+      border-radius: 16px;
+      padding: 0.3rem 0.8rem;
+      cursor: pointer;
+    }
+    .chip.active {
+      background: #007bff;
+      color: white;
+    }
+    input, textarea, select {
+      width: 100%;
+      margin-top: 0.3rem;
+      padding: 0.5rem;
+      border-radius: 8px;
+      border: 1px solid #aaa;
+    }
+    .search-bar {
+      width: 100%;
+      padding: 0.5rem;
+      border-radius: 10px;
+      border: 1px solid #aaa;
+      margin-bottom: 1rem;
+    }
+    .fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #f33;
+      color: white;
+      border: none;
+      width: 56px;
+      height: 56px;
+      font-size: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    dialog {
+      border: none;
+      border-radius: 16px;
+      padding: 1.5rem;
+      width: 90%;
+      max-width: 400px;
+    }
+    .dialog-title {
+      margin-top: 0;
+    }
+    .add-button {
+      margin-top: 1rem;
+      padding: 0.6rem;
+      width: 100%;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
 
-  <h2>🔐 Add New Account</h2>
-  <div class="card">
-    <label>🌐 Domain</label>
-    <input id="domainInput" placeholder="facebook, github...">
-
-    <label>🏷️ Category</label>
-    <input id="categoryInput" placeholder="งาน, ส่วนตัว, ลูกค้า...">
-
-    <label>🆔 ID</label>
-    <input id="idInput" placeholder="username or email">
-
-    <label>🔑 Password</label>
-    <input id="passInput" placeholder="password">
-
-    <label>📛 Account Name</label>
-    <input id="nameInput" placeholder="ชื่อบัญชี เช่น บัญชีหลัก">
-
-    <label>📝 Description</label>
-    <textarea id="descInput" rows="2" placeholder="รายละเอียด"></textarea>
-
-    <label>📶 Status</label>
-    <select id="statusInput">
-      <option value="active">🟢 ใช้งาน</option>
-      <option value="inactive">🔴 ไม่ใช้งาน</option>
-    </select>
-
-    <button onclick="addAccount()">➕ Add Account</button>
-  </div>
-
-  <h3>📁 Filter</h3>
-  <div class="chips" id="categoryFilters"></div>
-  <div class="chips" id="domainFilters"></div>
   <input class="search-bar" type="text" placeholder="🔍 ค้นหา..." oninput="filterAccounts()" id="searchInput"/>
 
+  <div class="chips" id="categoryFilters"></div>
+  <div class="chips" id="domainFilters"></div>
   <div id="accountList"></div>
 
-  <!-- Supabase JS SDK v2 -->
+  <button class="fab" onclick="document.getElementById('addDialog').showModal()">+</button>
+
+  <!-- Dialog สำหรับเพิ่มบัญชี -->
+  <dialog id="addDialog">
+    <form method="dialog" onsubmit="addAccount(); return false;">
+      <h3 class="dialog-title">➕ เพิ่มบัญชี</h3>
+      <label>🌐 Domain</label>
+      <input id="domainInput" required>
+
+      <label>🏷️ Category</label>
+      <input id="categoryInput">
+
+      <label>🆔 ID</label>
+      <input id="idInput" required>
+
+      <label>🔑 Password</label>
+      <input id="passInput" required>
+
+      <label>📛 Account Name</label>
+      <input id="nameInput">
+
+      <label>📝 Description</label>
+      <textarea id="descInput" rows="2"></textarea>
+
+      <label>📶 Status</label>
+      <select id="statusInput">
+        <option value="active">🟢 ใช้งาน</option>
+        <option value="inactive">🔴 ไม่ใช้งาน</option>
+      </select>
+
+      <button class="add-button">💾 Add Account</button>
+    </form>
+  </dialog>
+
+  <!-- Supabase SDK -->
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -68,16 +143,8 @@
     let selectedDomain = '';
 
     async function loadAccounts() {
-      const { data, error } = await supabase
-        .from("accounts")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error(error);
-        return;
-      }
-
+      const { data, error } = await supabase.from("accounts").select("*").order("created_at", { ascending: false });
+      if (error) return alert("โหลดข้อมูลล้มเหลว");
       accounts = data;
       renderFilters();
       renderAccounts();
@@ -144,7 +211,7 @@
         });
     }
 
-    window.addAccount = async function() {
+    window.addAccount = async function () {
       const domain = document.getElementById("domainInput").value.trim();
       const category = document.getElementById("categoryInput").value.trim();
       const account_id = document.getElementById("idInput").value.trim();
@@ -161,11 +228,11 @@
 
       if (error) return alert("❌ บันทึกล้มเหลว: " + error.message);
 
-      // Clear input fields
       ["domainInput", "categoryInput", "idInput", "passInput", "nameInput", "descInput"].forEach(id => {
         document.getElementById(id).value = "";
       });
 
+      document.getElementById('addDialog').close();
       await loadAccounts();
     }
 
@@ -173,9 +240,7 @@
       renderAccounts();
     }
 
-    // Initial load
     loadAccounts();
   </script>
-
 </body>
 </html>
