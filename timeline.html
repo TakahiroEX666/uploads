@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Timeline</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f1f3f4;
+      max-width: 700px;
+      margin: auto;
+      padding: 1rem;
+    }
+
+    .timeline-item {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      position: relative;
+      cursor: pointer;
+      word-wrap: break-word;
+    }
+
+    .timeline-item.feeling { border-left: 6px solid #ff9800; }
+    .timeline-item.note { border-left: 6px solid #4caf50; }
+    .timeline-item.upload { border-left: 6px solid #2196f3; }
+
+    .timestamp {
+      font-size: 0.8rem;
+      color: #777;
+      margin-bottom: 0.5rem;
+    }
+
+    .content {
+      white-space: pre-line;
+    }
+
+    .preview-img {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-top: 0.5rem;
+    }
+
+    .add-form {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      padding: 1rem;
+      border-top: 1px solid #ccc;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      box-shadow: 0 -3px 8px rgba(0,0,0,0.1);
+      max-width: 700px;
+      margin: auto;
+    }
+
+    input[type="text"], select, input[type="file"] {
+      flex: 1 1 100%;
+      padding: 0.6rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background: #ff6f00;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      flex: 1 1 100%;
+    }
+
+    @media (min-width: 480px) {
+      input[type="text"], select, input[type="file"], button {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h2>🕒 Timeline</h2>
+  <div id="timelineList"></div>
+
+  <div class="add-form">
+    <select id="typeSelect">
+      <option value="feeling">😊 Feeling</option>
+      <option value="note">📝 Note</option>
+      <option value="upload">📎 Upload</option>
+    </select>
+    <input type="text" id="titleInput" placeholder="เขียนสิ่งที่คุณรู้สึกหรือโพสต์..." />
+    <input type="file" id="fileInput" accept="image/*" />
+    <button onclick="addTimeline()">➕ เพิ่ม</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://fkntlawaawawiusmjsez.supabase.co',
+      'YOUR_PUBLIC_ANON_KEY'
+    );
+
+    async function loadTimeline() {
+      const { data, error } = await supabase
+        .from('timeline')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) return console.error(error);
+
+      const area = document.getElementById("timelineList");
+      area.innerHTML = '';
+
+      data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = `timeline-item ${item.type}`;
+        div.onclick = () => {
+          if (item.type === 'note') {
+            location.href = `note-view.html?id=${item.id}`;
+          } else if (item.image_url) {
+            window.open(item.image_url, '_blank');
+          } else {
+            alert(item.title);
+          }
+        };
+
+        const timestamp = new Date(item.created_at).toLocaleString('th-TH');
+        div.innerHTML = `
+          <div class="timestamp">🕒 ${timestamp}</div>
+          <div class="content">${item.title || ''}</div>
+          ${item.image_url ? `<img src="${item.image_url}" class="preview-img" />` : ''}
+        `;
+        area.appendChild(div);
+      });
+    }
+
+    async function addTimeline() {
+      const type = document.getElementById('typeSelect').value;
+      const title = document.getElementById('titleInput').value.trim();
+      const file = document.getElementById('fileInput').files[0];
+
+      let image_url = null;
+
+      // อัปโหลดภาพถ้ามี
+      if (file) {
+        const fileName = `${Date.now()}_${file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from('uploads')
+          .upload(fileName, file, { upsert: true });
+
+        if (uploadError) return alert("❌ Upload failed");
+
+        const { publicURL } = supabase.storage.from('uploads').getPublicUrl(fileName);
+        image_url = publicURL;
+      }
+
+      await supabase.from('timeline').insert({ type, title, image_url });
+      document.getElementById('titleInput').value = '';
+      document.getElementById('fileInput').value = '';
+      loadTimeline();
+    }
+
+    window.addEventListener('DOMContentLoaded', loadTimeline);
+  </script>
+
+</body>
+</html>
