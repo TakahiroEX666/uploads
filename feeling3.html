@@ -33,9 +33,9 @@
     .chat-container {
       display: flex;
       padding: 1rem;
+      flex-direction: column;
       overflow-y: auto;
       gap: 2rem;
-      overflow-y: auto;
       height: calc(100vh - 12rem);
     }
 
@@ -241,8 +241,8 @@
       notes.data?.forEach(item => timeline.push({ type: 'note', ...item }));
       uploads.data?.forEach(item => timeline.push({ type: 'upload', ...item }));
 
-      timeline.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
+      //timeline.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      timeline.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // จากเก่าไปใหม่
       scrollToBottom();
       renderTimeline(timeline);
     }
