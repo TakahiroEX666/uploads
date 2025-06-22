@@ -99,6 +99,7 @@
     <button onclick="addTimeline()">➕ เพิ่ม</button>
   </div>
 
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
   <script>
     const supabase = window.supabase.createClient(
@@ -106,68 +107,145 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbnRsYXdhYXdhd2l1c21qc2V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODcxMjAsImV4cCI6MjA2NTU2MzEyMH0.G-_fLzcpvPla3dUYNCV7qh0j-JHo1Ahr5fS7fQkHdpw'
     );
 
-    async function loadTimeline() {
-      const { data, error } = await supabase
-        .from('timeline')
-        .select('*')
-        .order('created_at', { ascending: false });
+    document.querySelectorAll(".emoji-buttons button").forEach(btn => {
+      btn.onclick = () => {
+        const input = document.getElementById("titleInput");
+        input.value += btn.textContent;
+        input.focus();
+      };
+    });
 
-      if (error) return console.error(error);
+    async function saveFeeling() {
+      const title = document.getElementById("titleInput").value.trim();
+      const imageInput = document.getElementById("imageInput");
 
-      const area = document.getElementById("timelineList");
-      area.innerHTML = '';
+      if (!title && !imageInput.files.length) {
+        return alert("กรุณากรอกความรู้สึกหรือเลือกรูปภาพ");
+      }
 
-      data.forEach(item => {
-        const div = document.createElement('div');
-        div.className = `timeline-item ${item.type}`;
-        div.onclick = () => {
-          if (item.type === 'note') {
-            location.href = `note-view.html?id=${item.id}`;
-          } else if (item.image_url) {
-            window.open(item.image_url, '_blank');
+      const urls = [];
+
+      if (imageInput.files.length > 0) {
+        const formData = new FormData();
+
+        for (let i = 0; i < imageInput.files.length; i++) {
+          const file = imageInput.files[i];
+          formData.append("file", file);
+          formData.append("note", title);
+
+          const res = await fetch("/upload", { method: "POST", body: formData });
+          const json = await res.json();
+
+          if (json.url) {
+            urls.push(json.url);
           } else {
-            alert(item.title);
+            alert("Upload ล้มเหลว");
+            return;
           }
+          formData.delete("file"); // reset for next loop
+        }
+      }
+
+      if (urls.length > 0) {
+        await supabase.from('uploads').insert({ file_url: JSON.stringify(urls), note: title });
+      } else {
+        await supabase.from('feelings').insert({ title });
+      }
+
+      document.getElementById("titleInput").value = '';
+      imageInput.value = '';
+      fetchTimeline();
+    }
+
+    async function deleteItem(type, id) {
+      await supabase.from(type + 's').delete().eq('id', id);
+      fetchTimeline();
+    }
+
+    async function fetchTimeline() {
+      const [feelings, notes, uploads] = await Promise.all([
+        supabase.from('feelings').select('*'),
+        supabase.from('notes').select('*'),
+        supabase.from('uploads').select('*')
+      ]);
+
+      const timeline = [];
+
+      feelings.data?.forEach(item => timeline.push({ type: 'emotion', ...item }));
+      notes.data?.forEach(item => timeline.push({ type: 'note', ...item }));
+      uploads.data?.forEach(item => timeline.push({ type: 'upload', ...item }));
+
+      timeline.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      scrollToBottom();
+      renderTimeline(timeline);
+    }
+
+    function renderTimeline(items) {
+      const container = document.getElementById('notesContainer');
+      container.innerHTML = '';
+
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'chat-card';
+        card.setAttribute('data-type', item.type);
+        card.ondblclick = () => {
+          if (confirm('ลบรายการนี้?')) deleteItem(item.type, item.id);
         };
 
-        const timestamp = new Date(item.created_at).toLocaleString('th-TH');
-        div.innerHTML = `
-          <div class="timestamp">🕒 ${timestamp}</div>
-          <div class="content">${item.title || ''}</div>
-          ${item.image_url ? `<img src="${item.image_url}" class="preview-img" />` : ''}
-        `;
-        area.appendChild(div);
+        const time = new Date(item.created_at).toLocaleString('th-TH', {
+          dateStyle: 'medium', timeStyle: 'short'
+        });
+
+        let html = `<div class="chat-meta">🕒 ${time}</div><div class="chat-type-label">${item.type}</div>`;
+
+        if (item.type === 'emotion') {
+          const isYoutube = item.title.includes('youtube.com') || item.title.includes('youtu.be');
+          if (isYoutube) {
+            const vid = extractYouTubeID(item.title);
+            html += `<div class="chat-text">${item.title}</div>`;
+            if (vid) html += `<iframe src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe>`;
+          } else {
+            html += `<div class="chat-text">${item.title}</div>`;
+          }
+        } else if (item.type === 'note') {
+          html += `<div class="chat-text"><span class="note-link" onclick="openNote('${item.id}')">${item.title}</span></div>`;
+        } else if (item.type === 'upload') {
+          html += `<div class="chat-text">${item.note || ''}</div>`;
+          html += `<div class="chat-img-group">`;
+          try {
+            const urls = JSON.parse(item.file_url);
+            urls.slice(0, 4).forEach(url => {
+              html += `<img src="${url}" alt="upload"/>`;
+            });
+          } catch {}
+          html += `</div>`;
+        }
+
+        card.innerHTML = html;
+        container.appendChild(card);
       });
     }
 
-    async function addTimeline() {
-      const type = document.getElementById('typeSelect').value;
-      const title = document.getElementById('titleInput').value.trim();
-      const file = document.getElementById('fileInput').files[0];
-
-      let image_url = null;
-
-      // อัปโหลดภาพถ้ามี
-      if (file) {
-        const fileName = `${Date.now()}_${file.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from('uploads')
-          .upload(fileName, file, { upsert: true });
-
-        if (uploadError) return alert("❌ Upload failed");
-
-        const { publicURL } = supabase.storage.from('uploads').getPublicUrl(fileName);
-        image_url = publicURL;
-      }
-
-      await supabase.from('timeline').insert({ type, title, image_url });
-      document.getElementById('titleInput').value = '';
-      document.getElementById('fileInput').value = '';
-      loadTimeline();
+    function scrollToBottom() {
+      const container = document.getElementById("chatContainer");
+      container.scrollTop = container.scrollHeight;
     }
 
-    window.addEventListener('DOMContentLoaded', loadTimeline);
-  </script>
+    function extractYouTubeID(url) {
+      const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([^\s&?/]+)/);
+      return match ? match[1] : '';
+    }
 
+    function openNote(id) {
+      location.href = `/note.html?id=${id}`;
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+    }
+
+    window.addEventListener('DOMContentLoaded', fetchTimeline);
+  </script>
 </body>
 </html>
+
