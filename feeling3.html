@@ -34,6 +34,7 @@
       display: flex;
       flex-direction: column-reverse;
       padding: 1rem;
+      overflow-y: auto;
       gap: 2rem;
       overflow-y: auto;
       height: calc(100vh - 12rem);
@@ -243,6 +244,7 @@
 
       timeline.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
+      scrollToBottom();
       renderTimeline(timeline);
     }
 
@@ -290,6 +292,11 @@
         card.innerHTML = html;
         container.appendChild(card);
       });
+    }
+
+    function scrollToBottom() {
+  const container = document.getElementById("chatContainer");
+  container.scrollTop = container.scrollHeight;
     }
 
     function extractYouTubeID(url) {
