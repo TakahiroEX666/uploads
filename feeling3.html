@@ -19,7 +19,7 @@
       background: var(--bg-light);
       color: var(--text-light);
       margin: 0;
-      padding-bottom: 7rem;
+      padding-bottom: 8rem;
       max-width: 900px;
       margin-inline: auto;
       transition: background 0.3s, color 0.3s;
@@ -36,7 +36,7 @@
       padding: 1rem;
       gap: 1rem;
       overflow-y: auto;
-      height: calc(100vh - 7rem);
+      height: calc(100vh - 10rem);
     }
 
     .chat-card {
@@ -112,12 +112,75 @@
       cursor: pointer;
       z-index: 99;
     }
+
+    .note-form {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      padding: 1rem;
+      box-shadow: 0 -4px 10px rgba(0,0,0,0.08);
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+      max-width: 900px;
+      margin: auto;
+      box-sizing: border-box;
+    }
+
+    .emoji-buttons {
+      display: flex;
+      overflow-x: auto;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.25rem;
+    }
+
+    .emoji-buttons button {
+      font-size: 1.5rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.75rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      margin-bottom: 0.5rem;
+    }
+
+    .save-btn {
+      background: #ff6f00;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 1rem;
+    }
   </style>
 </head>
 <body>
-
   <button class="theme-toggle" onclick="toggleTheme()">เปลี่ยนธีม</button>
-  <div class="chat-container" id="chatContainer"></div>
+  <div class="chat-container" id="chatContainer">
+    <div id="notesContainer"></div>
+  </div>
+
+  <div class="note-form">
+    <input type="text" id="titleInput" placeholder="คุณรู้สึกอย่างไร..." />
+    <div class="emoji-buttons">
+      <button>😊</button><button>😢</button><button>😭</button>
+      <button>😡</button><button>😍</button><button>😴</button>
+      <button>🥹</button><button>😂</button><button>🥰</button>
+    </div>
+    <button class="save-btn" onclick="saveFeeling()">💾 บันทึก</button>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
   <script>
@@ -125,6 +188,28 @@
       'https://fkntlawaawawiusmjsez.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbnRsYXdhYXdhd2l1c21qc2V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODcxMjAsImV4cCI6MjA2NTU2MzEyMH0.G-_fLzcpvPla3dUYNCV7qh0j-JHo1Ahr5fS7fQkHdpw'
     );
+
+    document.querySelectorAll(".emoji-buttons button").forEach(btn => {
+      btn.onclick = () => {
+        const input = document.getElementById("titleInput");
+        input.value += btn.textContent;
+        input.focus();
+      };
+    });
+
+    async function saveFeeling() {
+      const title = document.getElementById("titleInput").value.trim();
+      if (!title) return alert("กรุณากรอกความรู้สึก");
+
+      await supabase.from('feelings').insert({ title });
+      document.getElementById("titleInput").value = '';
+      loadFeelings();
+    }
+
+    async function deleteItem(type, id) {
+      await supabase.from(type + 's').delete().eq('id', id);
+      fetchTimeline();
+    }
 
     async function fetchTimeline() {
       const [feelings, notes, uploads] = await Promise.all([
@@ -135,17 +220,9 @@
 
       const timeline = [];
 
-      feelings.data?.forEach(item => {
-        timeline.push({ type: 'emotion', ...item });
-      });
-
-      notes.data?.forEach(item => {
-        timeline.push({ type: 'note', ...item });
-      });
-
-      uploads.data?.forEach(item => {
-        timeline.push({ type: 'upload', ...item });
-      });
+      feelings.data?.forEach(item => timeline.push({ type: 'emotion', ...item }));
+      notes.data?.forEach(item => timeline.push({ type: 'note', ...item }));
+      uploads.data?.forEach(item => timeline.push({ type: 'upload', ...item }));
 
       timeline.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
@@ -153,7 +230,7 @@
     }
 
     function renderTimeline(items) {
-      const container = document.getElementById('chatContainer');
+      const container = document.getElementById('notesContainer');
       container.innerHTML = '';
 
       items.forEach(item => {
@@ -161,9 +238,7 @@
         card.className = 'chat-card';
         card.setAttribute('data-type', item.type);
         card.ondblclick = () => {
-          if (confirm('ลบรายการนี้?')) {
-            deleteItem(item.type, item.id);
-          }
+          if (confirm('ลบรายการนี้?')) deleteItem(item.type, item.id);
         };
 
         const time = new Date(item.created_at).toLocaleString('th-TH', {
@@ -181,13 +256,9 @@
           } else {
             html += `<div class="chat-text">${item.title}</div>`;
           }
-        }
-
-        if (item.type === 'note') {
+        } else if (item.type === 'note') {
           html += `<div class="chat-text"><span class="note-link" onclick="openNote('${item.id}')">${item.title}</span></div>`;
-        }
-
-        if (item.type === 'upload') {
+        } else if (item.type === 'upload') {
           html += `<div class="chat-text">${item.note || ''}</div>`;
           html += `<div class="chat-img-group">`;
           try {
@@ -209,20 +280,19 @@
       return match ? match[1] : '';
     }
 
-    async function deleteItem(type, id) {
-      await supabase.from(type + 's').delete().eq('id', id);
-      fetchTimeline();
-    }
-
     function openNote(id) {
-      location.href = `/note.html?id=${id}`; // หน้ารายละเอียดโน้ต
+      location.href = `/note.html?id=${id}`;
     }
 
     function toggleTheme() {
       document.body.classList.toggle('dark');
     }
 
-    fetchTimeline();
+    function loadFeelings() {
+      fetchTimeline();
+    }
+
+    window.addEventListener('DOMContentLoaded', loadFeelings);
   </script>
 </body>
 </html>
