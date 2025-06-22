@@ -207,29 +207,6 @@
       };
     });
 
-    async function saveFeeling() {
-      const title = document.getElementById("titleInput").value.trim();
-      const imageInput = document.getElementById("imageInput");
-
-      if (!title && !imageInput.files.length) {
-        return alert("กรุณากรอกความรู้สึกหรือเลือกรูปภาพ");
-      }
-
-      if (imageInput.files.length) {
-        const urls = [];
-        for (let file of imageInput.files) {
-          // สมมุติ URL ชั่วคราว
-          urls.push("https://via.placeholder.com/150?text=Preview");
-        }
-        await supabase.from('uploads').insert({ file_url: JSON.stringify(urls), note: title });
-      } else {
-        await supabase.from('feelings').insert({ title });
-      }
-
-      document.getElementById("titleInput").value = '';
-      imageInput.value = '';
-      fetchTimeline();
-    }
 
     async function deleteItem(type, id) {
       await supabase.from(type + 's').delete().eq('id', id);
@@ -318,6 +295,59 @@
     function toggleTheme() {
       document.body.classList.toggle('dark');
     }
+
+
+    <!-- ส่วนหน้า HTML (client) ที่แก้ไขให้ใช้ Cloudflare R2 -->
+<!-- เพิ่มการอัปโหลดไฟล์ผ่าน server.js -->
+
+
+  async function uploadToR2(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch("/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) throw new Error("Upload failed");
+    const data = await res.json();
+    return data.url;
+  }
+
+  async function saveFeeling() {
+    const title = document.getElementById("titleInput").value.trim();
+    const imageInput = document.getElementById("imageInput");
+
+    if (!title && !imageInput.files.length) {
+      return alert("กรุณากรอกความรู้สึกหรือเลือกรูปภาพ");
+    }
+
+    const urls = [];
+    for (let file of imageInput.files) {
+      try {
+        const url = await uploadToR2(file);
+        urls.push(url);
+      } catch (e) {
+        console.error("Upload error", e);
+      }
+    }
+
+    if (urls.length > 0) {
+      await supabase.from("uploads").insert({
+        file_url: JSON.stringify(urls),
+        note: title
+      });
+    } else {
+      await supabase.from("feelings").insert({ title });
+    }
+
+    document.getElementById("titleInput").value = '';
+    imageInput.value = '';
+    fetchTimeline();
+  }
+
+  
 
     window.addEventListener('DOMContentLoaded', fetchTimeline);
   </script>
