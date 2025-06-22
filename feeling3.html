@@ -114,57 +114,63 @@
       z-index: 99;
     }
 
-    .note-form {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: #fff;
-      padding: 1rem;
-      box-shadow: 0 -4px 10px rgba(0,0,0,0.08);
-      border-top-left-radius: 12px;
-      border-top-right-radius: 12px;
-      max-width: 900px;
-      margin: auto;
-      box-sizing: border-box;
-    }
+    ..note-form {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 -4px 10px rgba(0,0,0,0.08);
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  max-width: 900px;
+  margin: auto;
+  box-sizing: border-box;
+  z-index: 10;
+}
 
-    .emoji-buttons {
-      display: flex;
-      overflow-x: auto;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-      padding-bottom: 0.25rem;
-    }
+body.dark .note-form {
+  background: var(--card-dark);
+}
 
-    .emoji-buttons button {
-      font-size: 1.5rem;
-      background: none;
-      border: none;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
+.note-form input[type="text"] {
+  flex: 1;
+  padding: 0.6rem 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+}
 
-    input[type="text"], input[type="file"] {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 0.75rem;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      margin-bottom: 0.5rem;
-    }
+.upload-icon {
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+}
 
-    .save-btn {
-      background: #ff6f00;
-      color: white;
-      border: none;
-      padding: 0.6rem 1.2rem;
-      border-radius: 8px;
-      cursor: pointer;
-      width: 100%;
-      font-size: 1rem;
-    }
+.upload-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.upload-label:hover {
+  color: #ff6f00;
+}
+
+.save-btn {
+  padding: 0.5rem 1rem;
+  font-size: 1.2rem;
+}
+
+
+
+    
   </style>
 </head>
 <body>
@@ -173,16 +179,22 @@
     <div id="notesContainer"></div>
   </div>
 
+
+
   <div class="note-form">
-    <input type="text" id="titleInput" placeholder="คุณรู้สึกอย่างไร..." />
-    <input type="file" id="imageInput" accept="image/*" multiple />
     <div class="emoji-buttons">
-      <button>😊</button><button>😢</button><button>😭</button>
-      <button>😡</button><button>😍</button><button>😴</button>
-      <button>🥹</button><button>😂</button><button>🥰</button>
+    <button>😊</button><button>😢</button><button>😭</button>
+    <button>😡</button><button>😍</button><button>😴</button>
+    <button>🥹</button><button>😂</button><button>🥰</button>
     </div>
-    <button class="save-btn" onclick="saveFeeling()">💾 บันทึก</button>
+  <label class="upload-label" title="แนบรูปภาพ">
+    📎
+    <input type="file" id="imageInput" accept="image/*" multiple hidden />
+  </label>
+  <input type="text" id="titleInput" placeholder="คุณรู้สึกอย่างไร..." />
+  <button class="save-btn" onclick="saveFeeling()">📤</button>
   </div>
+  
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
   <script>
