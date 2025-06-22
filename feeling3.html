@@ -3,280 +3,203 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Feeling Note</title>
+  <title>Timeline Chat</title>
   <style>
     :root {
-      --bg: #f1f3f4;
-      --card-bg: #ffffff;
-      --text: #333;
-      --primary: #ff6f00;
-      --danger: #e53935;
+      --bg-light: #f1f3f4;
+      --bg-dark: #1e1e1e;
+      --card-light: #ffffff;
+      --card-dark: #2c2c2c;
+      --text-light: #333;
+      --text-dark: #eee;
     }
-    [data-theme="dark"] {
-      --bg: #121212;
-      --card-bg: #1f1f1f;
-      --text: #f1f3f4;
-    }
+
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      background: var(--bg-light);
+      color: var(--text-light);
+      margin: 0;
+      padding-bottom: 7rem;
       max-width: 900px;
-      margin: auto;
-      padding: 2rem 1rem 6rem;
-      box-sizing: border-box;
+      margin-inline: auto;
       transition: background 0.3s, color 0.3s;
     }
-    h2 {
-      text-align: center;
-      color: var(--primary);
+
+    body.dark {
+      background: var(--bg-dark);
+      color: var(--text-dark);
     }
-    .note-form {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: var(--card-bg);
-      padding: 1rem;
-      box-shadow: 0 -4px 10px rgba(0,0,0,0.08);
-      border-top-left-radius: 12px;
-      border-top-right-radius: 12px;
-      max-width: 900px;
-      margin: auto;
-      box-sizing: border-box;
-    }
-    input, textarea {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 0.75rem;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      margin-bottom: 0.5rem;
-    }
-    .emoji-buttons {
+
+    .chat-container {
       display: flex;
-      overflow-x: auto;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-      padding-bottom: 0.25rem;
-    }
-    .emoji-buttons button {
-      font-size: 1.5rem;
-      background: none;
-      border: none;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-    .save-btn {
-      background: var(--primary);
-      color: white;
-      border: none;
-      padding: 0.6rem 1.2rem;
-      border-radius: 8px;
-      cursor: pointer;
-      width: 100%;
-      font-size: 1rem;
-    }
-    .notes-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1rem;
-    }
-    .note-card {
-      background: var(--card-bg);
-      border-radius: 12px;
+      flex-direction: column-reverse;
       padding: 1rem;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      gap: 1rem;
+      overflow-y: auto;
+      height: calc(100vh - 7rem);
+    }
+
+    .chat-card {
+      background: var(--card-light);
+      padding: 1rem;
+      border-radius: 16px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
       position: relative;
-      transition: background 0.3s, color 0.3s;
-      cursor: pointer;
+      transition: background 0.3s;
     }
-    .note-title {
-      font-size: 1.2rem;
-      font-weight: bold;
+
+    body.dark .chat-card {
+      background: var(--card-dark);
+    }
+
+    .chat-meta {
+      font-size: 0.75rem;
+      color: gray;
       margin-bottom: 0.5rem;
-      word-wrap: break-word;
     }
-    iframe, .uploaded-img {
-      width: 100%;
-      border-radius: 8px;
+
+    .chat-type-label {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.75rem;
+      font-size: 0.7rem;
+      background: #ff6f00;
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 10px;
+    }
+
+    .chat-img-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 0.25rem;
       margin-top: 0.5rem;
     }
-    .uploaded-img {
+
+    .chat-img-group img {
+      width: 100%;
+      border-radius: 10px;
       object-fit: cover;
-      height: 150px;
     }
-    .delete-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: var(--danger);
+
+    iframe {
+      width: 100%;
+      height: 200px;
+      margin-top: 0.5rem;
+      border-radius: 12px;
+    }
+
+    .chat-text {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .note-link {
+      color: #1976d2;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .theme-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      background: #ff6f00;
       color: white;
       border: none;
-      border-radius: 50%;
-      width: 28px;
-      height: 28px;
-      font-size: 16px;
+      padding: 0.5rem;
+      border-radius: 8px;
       cursor: pointer;
-    }
-    .note-emoji {
-      font-size: 1.5rem;
-      margin-bottom: 0.5rem;
-    }
-    .modal {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-    }
-    .modal.hidden { display: none; }
-    .modal-content {
-      background: var(--card-bg);
-      padding: 2rem;
-      border-radius: 16px;
-      width: 90%;
-      max-width: 600px;
-      color: var(--text);
-    }
-    .modal .close {
-      position: absolute;
-      top: 10px;
-      right: 20px;
-      font-size: 2rem;
-      color: white;
-      cursor: pointer;
+      z-index: 99;
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
 </head>
-<body data-theme="light">
-  <h2>บันทึกความรู้สึกของคุณ</h2>
-  <div id="notesContainer" class="notes-grid"></div>
+<body>
 
-  <div class="note-form">
-    <input type="text" id="titleInput" placeholder="คุณรู้สึกอย่างไร..." />
-    <textarea id="noteInput" rows="2" placeholder="โน๊ตเพิ่มเติม (Optional)"></textarea>
-    <input type="url" id="youtubeInput" placeholder="แนบลิงก์ YouTube (Optional)" />
-    <input type="text" id="tagsInput" placeholder="เพิ่มแท็ก เช่น เหงา, รัก, หวังดี (คั่นด้วย ,)" />
-    <input type="file" id="imageInput" multiple accept="image/*" />
-    <div class="emoji-buttons">
-      <button>😊</button><button>😢</button><button>😭</button>
-      <button>😡</button><button>😍</button><button>😴</button>
-      <button>🥹</button><button>😂</button><button>🥰</button>
-    </div>
-    <button class="save-btn" onclick="saveFeeling()">💾 บันทึก</button>
-  </div>
+  <button class="theme-toggle" onclick="toggleTheme()">เปลี่ยนธีม</button>
+  <div class="chat-container" id="chatContainer"></div>
 
-  <div id="noteModal" class="modal hidden">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal()">×</span>
-      <div id="modalBody"></div>
-    </div>
-  </div>
-
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
   <script>
     const supabase = window.supabase.createClient(
       'https://fkntlawaawawiusmjsez.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbnRsYXdhYXdhd2l1c21qc2V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODcxMjAsImV4cCI6MjA2NTU2MzEyMH0.G-_fLzcpvPla3dUYNCV7qh0j-JHo1Ahr5fS7fQkHdpw'
     );
 
-    let selectedEmoji = '';
-    document.querySelectorAll(".emoji-buttons button").forEach(btn => {
-      btn.onclick = () => {
-        selectedEmoji = btn.textContent;
-        document.getElementById("titleInput").value += btn.textContent;
-        document.getElementById("titleInput").focus();
-      };
-    });
+    async function fetchTimeline() {
+      const [feelings, notes, uploads] = await Promise.all([
+        supabase.from('feelings').select('*'),
+        supabase.from('notes').select('*'),
+        supabase.from('uploads').select('*')
+      ]);
 
-    async function saveFeeling() {
-      const title = document.getElementById("titleInput").value.trim();
-      const note = document.getElementById("noteInput").value.trim();
-      const youtube = document.getElementById("youtubeInput").value.trim();
-      const tags = document.getElementById("tagsInput").value.trim().split(',').map(t => t.trim()).filter(Boolean);
-      const files = document.getElementById("imageInput").files;
+      const timeline = [];
 
-      if (!title) return alert("กรุณากรอกความรู้สึก");
+      feelings.data?.forEach(item => {
+        timeline.push({ type: 'emotion', ...item });
+      });
 
-      const { data: feelingData } = await supabase.from('feelings').insert({ title, tags, emoji: selectedEmoji, created_at: new Date().toISOString() }).select('*');
-      const feelingId = feelingData[0]?.id;
+      notes.data?.forEach(item => {
+        timeline.push({ type: 'note', ...item });
+      });
 
-      if (note) await supabase.from('note').insert({ title, context: note, created_at: new Date().toISOString() });
+      uploads.data?.forEach(item => {
+        timeline.push({ type: 'upload', ...item });
+      });
 
-      for (let i = 0; i < Math.min(files.length, 4); i++) {
-        const file = files[i];
-        const fileName = `${Date.now()}-${file.name}`;
-        const { error } = await supabase.storage.from('uploads').upload(fileName, file);
-        if (!error) {
-          const url = `https://fkntlawaawawiusmjsez.supabase.co/storage/v1/object/public/uploads/${fileName}`;
-          await supabase.from('upload').insert({ file_name: fileName, file_url: url, created_at: new Date().toISOString() });
-        }
-      }
+      timeline.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-      document.getElementById("titleInput").value = '';
-      document.getElementById("noteInput").value = '';
-      document.getElementById("youtubeInput").value = '';
-      document.getElementById("tagsInput").value = '';
-      document.getElementById("imageInput").value = '';
-      selectedEmoji = '';
-      loadFeelings();
+      renderTimeline(timeline);
     }
 
-    async function deleteFeeling(id) {
-      if (confirm("คุณต้องการลบความรู้สึกนี้หรือไม่?")) {
-        await supabase.from('feelings').delete().eq('id', id);
-        loadFeelings();
-      }
-    }
-
-    function openModal(contentHTML) {
-      document.getElementById("modalBody").innerHTML = contentHTML;
-      document.getElementById("noteModal").classList.remove("hidden");
-    }
-
-    function closeModal() {
-      document.getElementById("noteModal").classList.add("hidden");
-    }
-
-    async function loadFeelings() {
-      const { data, error } = await supabase.from('feelings').select('*').order('id', { ascending: false });
-      if (error) return console.error(error);
-
-      const container = document.getElementById("notesContainer");
+    function renderTimeline(items) {
+      const container = document.getElementById('chatContainer');
       container.innerHTML = '';
 
-      data.forEach(feeling => {
-        const card = document.createElement("div");
-        card.className = "note-card";
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'chat-card';
+        card.setAttribute('data-type', item.type);
+        card.ondblclick = () => {
+          if (confirm('ลบรายการนี้?')) {
+            deleteItem(item.type, item.id);
+          }
+        };
 
-        const createdTime = new Date(feeling.created_at).toLocaleString('th-TH', {
-          dateStyle: 'medium',
-          timeStyle: 'short'
+        const time = new Date(item.created_at).toLocaleString('th-TH', {
+          dateStyle: 'medium', timeStyle: 'short'
         });
 
-        const isYouTube = feeling.title.includes("youtube.com") || feeling.title.includes("youtu.be");
-        const videoId = extractYouTubeID(feeling.title);
-        const embed = isYouTube && videoId ? `<iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>` : '';
+        let html = `<div class="chat-meta">🕒 ${time}</div><div class="chat-type-label">${item.type}</div>`;
 
-        const tagsHtml = feeling.tags ? `<div style="margin-top:0.5rem; font-size:0.9rem; color:#888;">#${feeling.tags.join(' #')}</div>` : '';
+        if (item.type === 'emotion') {
+          const isYoutube = item.title.includes('youtube.com') || item.title.includes('youtu.be');
+          if (isYoutube) {
+            const vid = extractYouTubeID(item.title);
+            html += `<div class="chat-text">${item.title}</div>`;
+            if (vid) html += `<iframe src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe>`;
+          } else {
+            html += `<div class="chat-text">${item.title}</div>`;
+          }
+        }
 
-        card.innerHTML = `
-          <button class="delete-btn" onclick="deleteFeeling('${feeling.id}')">✕</button>
-          <div style="font-size: 0.85rem; color: #666;">🕒 ${createdTime}</div>
-          <div class="note-emoji">${feeling.emoji || ''}</div>
-          <div class="note-title">${feeling.title}</div>
-          ${embed}
-          ${tagsHtml}
-        `;
+        if (item.type === 'note') {
+          html += `<div class="chat-text"><span class="note-link" onclick="openNote('${item.id}')">${item.title}</span></div>`;
+        }
 
-        card.addEventListener("click", () => {
-          openModal(`<h3>${feeling.title}</h3><p>${feeling.emoji || ''}</p>${embed}${tagsHtml}`);
-        });
+        if (item.type === 'upload') {
+          html += `<div class="chat-text">${item.note || ''}</div>`;
+          html += `<div class="chat-img-group">`;
+          try {
+            const urls = JSON.parse(item.file_url);
+            urls.slice(0, 4).forEach(url => {
+              html += `<img src="${url}" alt="upload"/>`;
+            });
+          } catch {}
+          html += `</div>`;
+        }
 
+        card.innerHTML = html;
         container.appendChild(card);
       });
     }
@@ -286,7 +209,20 @@
       return match ? match[1] : '';
     }
 
-    window.addEventListener('DOMContentLoaded', loadFeelings);
+    async function deleteItem(type, id) {
+      await supabase.from(type + 's').delete().eq('id', id);
+      fetchTimeline();
+    }
+
+    function openNote(id) {
+      location.href = `/note.html?id=${id}`; // หน้ารายละเอียดโน้ต
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+    }
+
+    fetchTimeline();
   </script>
 </body>
 </html>
