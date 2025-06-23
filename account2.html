@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Account Manager</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #ddd;
+      margin: 0;
+      padding: 1rem;
+    }
+    .search-container {
+      display: flex;
+      align-items: center;
+      background: white;
+      border-radius: 20px;
+      padding: 0.5rem 1rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .search-container input {
+      border: none;
+      flex: 1;
+      outline: none;
+      font-size: 1rem;
+    }
+    .chips {
+      display: flex;
+      gap: 0.5rem;
+      margin: 1rem 0;
+    }
+    .chip {
+      background: #ccc;
+      border-radius: 16px;
+      padding: 0.3rem 0.8rem;
+      cursor: pointer;
+    }
+    .chip.active {
+      background: #000;
+      color: white;
+    }
+    .card {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      background: #ccffe0;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      cursor: pointer;
+    }
+    .card.inactive {
+      background: #f8c7c7;
+    }
+    .circle {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #00eecf;
+    }
+    .info {
+      flex: 1;
+    }
+    .fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #ccc;
+      color: #fff;
+      border: none;
+      padding: 1rem;
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="search-container">
+    🔍 <input type="text" id="searchInput" placeholder="ค้นหา" oninput="filterAccounts()">
+  </div>
+  <div class="chips" id="domainFilters"></div>
+  <div id="accountList"></div>
+  <button class="fab" onclick="window.location.href='edit.html'">Add Account</button>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
+      "https://fkntlawaawawiusmjsez.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ..."
+    );
+
+    let accounts = [];
+    let selectedDomain = '';
+
+    async function loadAccounts() {
+      const { data, error } = await supabase.from("accounts").select("*").order("created_at", { ascending: false });
+      if (error) return alert("โหลดข้อมูลล้มเหลว");
+      accounts = data;
+      renderFilters();
+      renderAccounts();
+    }
+
+    function renderFilters() {
+      const domSet = [...new Set(accounts.map(a => a.domain || ""))];
+      const domainArea = document.getElementById("domainFilters");
+      domainArea.innerHTML = '';
+
+      const allChip = document.createElement("div");
+      allChip.className = `chip ${selectedDomain === '' ? 'active' : ''}`;
+      allChip.innerText = 'ALL';
+      allChip.onclick = () => {
+        selectedDomain = '';
+        renderFilters();
+        renderAccounts();
+      }
+      domainArea.appendChild(allChip);
+
+      domSet.forEach(dom => {
+        const chip = document.createElement("div");
+        chip.className = `chip ${selectedDomain === dom ? 'active' : ''}`;
+        chip.innerText = dom;
+        chip.onclick = () => {
+          selectedDomain = selectedDomain === dom ? '' : dom;
+          renderFilters();
+          renderAccounts();
+        };
+        domainArea.appendChild(chip);
+      });
+    }
+
+    function renderAccounts() {
+      const keyword = document.getElementById("searchInput").value.toLowerCase();
+      const area = document.getElementById("accountList");
+      area.innerHTML = '';
+      accounts.filter(a =>
+        (!selectedDomain || a.domain === selectedDomain) &&
+        ((a.account_name || '').toLowerCase().includes(keyword) ||
+         (a.account_id || '').toLowerCase().includes(keyword))
+      ).forEach(a => {
+        const card = document.createElement("div");
+        card.className = `card ${a.status === 'inactive' ? 'inactive' : ''}`;
+        card.onclick = () => {
+          localStorage.setItem('selectedAccount', JSON.stringify(a));
+          window.location.href = 'edit.html';
+        }
+        card.innerHTML = `
+          <div class="circle"></div>
+          <div class="info">
+            <strong>${a.domain}</strong><br/>
+            ${a.account_id}<br/>
+            📋 ${a.status === 'active' ? 'ใช้บริการอยู่' : 'ไม่ได้ใช้งาน'}
+          </div>
+        `;
+        area.appendChild(card);
+      });
+    }
+
+    window.filterAccounts = filterAccounts;
+
+    function filterAccounts() {
+      renderAccounts();
+    }
+
+    loadAccounts();
+  </script>
+</body>
+</html>
