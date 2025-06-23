@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Detail</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #ddd;
+      margin: 0;
+      padding: 2rem 1rem;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      max-width: 420px;
+      margin: auto;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    h2 {
+      margin: 0 0 1rem;
+    }
+    .circle {
+      width: 64px;
+      height: 64px;
+      background: #00ffe3;
+      border-radius: 50%;
+      margin-bottom: 1rem;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 1rem;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 0.6rem;
+      border-radius: 10px;
+      border: 1px solid #aaa;
+      margin-top: 0.3rem;
+    }
+    button {
+      margin-top: 1.5rem;
+      padding: 0.7rem 1rem;
+      background: limegreen;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+    }
+    .delete {
+      background: crimson;
+      margin-top: 0.5rem;
+    }
+    .back {
+      margin-bottom: 1rem;
+      display: block;
+      text-align: center;
+      color: #444;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back">⬅️ กลับ</a>
+  <div class="card">
+    <div class="circle"></div>
+    <form onsubmit="saveAccount(); return false;">
+      <label>🌐 Domain</label>
+      <input id="domain">
+
+      <label>🆔 Account ID</label>
+      <input id="account_id" disabled>
+
+      <label>🔑 Password</label>
+      <input id="password">
+
+      <label>📛 Account Name</label>
+      <input id="account_name">
+
+      <label>🏷️ Category</label>
+      <input id="category">
+
+      <label>⭐ Important</label>
+      <input id="important">
+
+      <label>📝 Description</label>
+      <textarea id="description" rows="3"></textarea>
+
+      <label>📶 Status</label>
+      <select id="status">
+        <option value="active">🟢 ใช้งาน</option>
+        <option value="inactive">🔴 ไม่ใช้งาน</option>
+      </select>
+
+      <button type="submit">💾 Edit</button>
+      <button type="button" class="delete" onclick="deleteAccount()">🗑️ Delete</button>
+    </form>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
+      "https://fkntlawaawawiusmjsez.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ..."
+    );
+
+    const data = JSON.parse(localStorage.getItem('selectedAccount') || '{}');
+    document.getElementById('domain').value = data.domain || '';
+    document.getElementById('account_id').value = data.account_id || '';
+    document.getElementById('password').value = data.password || '';
+    document.getElementById('account_name').value = data.account_name || '';
+    document.getElementById('category').value = data.category || '';
+    document.getElementById('important').value = data.important || '';
+    document.getElementById('description').value = data.description || '';
+    document.getElementById('status').value = data.status || 'active';
+
+    window.saveAccount = async function () {
+      const updateData = {
+        domain: document.getElementById('domain').value.trim(),
+        password: document.getElementById('password').value.trim(),
+        account_name: document.getElementById('account_name').value.trim(),
+        category: document.getElementById('category').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        important: document.getElementById('important').value.trim(),
+        status: document.getElementById('status').value,
+      };
+      const { error } = await supabase.from('accounts').update(updateData).eq('account_id', data.account_id);
+      if (error) return alert('❌ ไม่สามารถบันทึกข้อมูลได้: ' + error.message);
+      alert('✅ บันทึกเรียบร้อย');
+      window.location.href = 'index.html';
+    }
+
+    window.deleteAccount = async function () {
+      if (!confirm('คุณต้องการลบบัญชีนี้หรือไม่?')) return;
+      const { error } = await supabase.from('accounts').delete().eq('account_id', data.account_id);
+      if (error) return alert('❌ ไม่สามารถลบข้อมูลได้: ' + error.message);
+      alert('✅ ลบเรียบร้อยแล้ว');
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>
