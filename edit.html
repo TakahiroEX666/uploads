@@ -97,8 +97,8 @@
         <option value="inactive">🔴 ไม่ใช้งาน</option>
       </select>
 
-      <button type="submit">💾 Edit</button>
-      <button type="button" class="delete" onclick="deleteAccount()">🗑️ Delete</button>
+      <button type="submit">💾 บันทึก</button>
+      <button type="button" class="delete" onclick="deleteAccount()">🗑️ ลบ</button>
     </form>
   </div>
 
@@ -110,12 +110,15 @@
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbnRsYXdhYXdhd2l1c21qc2V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODcxMjAsImV4cCI6MjA2NTU2MzEyMH0.G-_fLzcpvPla3dUYNCV7qh0j-JHo1Ahr5fS7fQkHdpw"
     );
 
-    const isEditMode = !!data.account_id;
-       if (!isEditMode) {
-          document.getElementById('account_id').disabled = false; // เพิ่มใหม่ → ให้กรอก ID ได้
-      }
-
     const data = JSON.parse(localStorage.getItem('selectedAccount') || '{}');
+    const isEditMode = !!data.account_id;
+
+    // ถ้าเพิ่มใหม่ → ปลดล็อกช่องกรอก ID
+    if (!isEditMode) {
+      document.getElementById('account_id').disabled = false;
+    }
+
+    // เติมข้อมูลเดิมถ้ามี
     document.getElementById('domain').value = data.domain || '';
     document.getElementById('account_id').value = data.account_id || '';
     document.getElementById('password').value = data.password || '';
@@ -126,34 +129,33 @@
     document.getElementById('status').value = data.status || 'active';
 
     window.saveAccount = async function () {
-
-      if (isEditMode) {
-  const { error } = await supabase.from('accounts').update(updateData).eq('account_id', data.account_id);
-  if (error) return alert('❌ ไม่สามารถบันทึกข้อมูลได้: ' + error.message);
-  alert('✅ แก้ไขเรียบร้อย');
-} else {
-  updateData.account_id = document.getElementById('account_id').value.trim();
-  const { error } = await supabase.from('accounts').insert([updateData]);
-  if (error) return alert('❌ ไม่สามารถเพิ่มบัญชีได้: ' + error.message);
-  alert('✅ เพิ่มบัญชีเรียบร้อย');
-      }
-      
       const updateData = {
         domain: document.getElementById('domain').value.trim(),
         password: document.getElementById('password').value.trim(),
         account_name: document.getElementById('account_name').value.trim(),
         category: document.getElementById('category').value.trim(),
-        description: document.getElementById('description').value.trim(),
         important: document.getElementById('important').value.trim(),
+        description: document.getElementById('description').value.trim(),
         status: document.getElementById('status').value,
       };
-      const { error } = await supabase.from('accounts').update(updateData).eq('account_id', data.account_id);
-      if (error) return alert('❌ ไม่สามารถบันทึกข้อมูลได้: ' + error.message);
-      alert('✅ บันทึกเรียบร้อย');
+
+      if (isEditMode) {
+        const { error } = await supabase.from('accounts').update(updateData).eq('account_id', data.account_id);
+        if (error) return alert('❌ ไม่สามารถบันทึกข้อมูลได้: ' + error.message);
+        alert('✅ แก้ไขเรียบร้อย');
+      } else {
+        updateData.account_id = document.getElementById('account_id').value.trim();
+        if (!updateData.account_id || !updateData.password) return alert('กรุณากรอกข้อมูลสำคัญ');
+        const { error } = await supabase.from('accounts').insert([updateData]);
+        if (error) return alert('❌ ไม่สามารถเพิ่มบัญชีได้: ' + error.message);
+        alert('✅ เพิ่มบัญชีเรียบร้อย');
+      }
+
       window.location.href = 'index.html';
     }
 
     window.deleteAccount = async function () {
+      if (!isEditMode) return alert('⛔ ไม่สามารถลบได้เพราะยังไม่ได้สร้างบัญชีนี้');
       if (!confirm('คุณต้องการลบบัญชีนี้หรือไม่?')) return;
       const { error } = await supabase.from('accounts').delete().eq('account_id', data.account_id);
       if (error) return alert('❌ ไม่สามารถลบข้อมูลได้: ' + error.message);
