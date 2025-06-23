@@ -80,8 +80,9 @@
   </div>
   <div class="chips" id="domainFilters"></div>
   <div id="accountList"></div>
-  <button class="fab" onclick="window.location.href='edit.html'">Add Account</button>
 
+  <button class="fab" onclick="startAddAccount()">Add Account</button>
+  
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -101,6 +102,13 @@
       renderAccounts();
     }
 
+
+    function startAddAccount() {
+  localStorage.removeItem('selectedAccount'); // 💡 ล้างข้อมูลเก่าออก
+  window.location.href = 'edit.html';
+    }
+
+    
     function renderFilters() {
       const domSet = [...new Set(accounts.map(a => a.domain || ""))];
       const domainArea = document.getElementById("domainFilters");
