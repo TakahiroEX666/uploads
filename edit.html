@@ -110,6 +110,11 @@
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrbnRsYXdhYXdhd2l1c21qc2V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5ODcxMjAsImV4cCI6MjA2NTU2MzEyMH0.G-_fLzcpvPla3dUYNCV7qh0j-JHo1Ahr5fS7fQkHdpw"
     );
 
+    const isEditMode = !!data.account_id;
+       if (!isEditMode) {
+          document.getElementById('account_id').disabled = false; // เพิ่มใหม่ → ให้กรอก ID ได้
+      }
+
     const data = JSON.parse(localStorage.getItem('selectedAccount') || '{}');
     document.getElementById('domain').value = data.domain || '';
     document.getElementById('account_id').value = data.account_id || '';
@@ -121,6 +126,18 @@
     document.getElementById('status').value = data.status || 'active';
 
     window.saveAccount = async function () {
+
+      if (isEditMode) {
+  const { error } = await supabase.from('accounts').update(updateData).eq('account_id', data.account_id);
+  if (error) return alert('❌ ไม่สามารถบันทึกข้อมูลได้: ' + error.message);
+  alert('✅ แก้ไขเรียบร้อย');
+} else {
+  updateData.account_id = document.getElementById('account_id').value.trim();
+  const { error } = await supabase.from('accounts').insert([updateData]);
+  if (error) return alert('❌ ไม่สามารถเพิ่มบัญชีได้: ' + error.message);
+  alert('✅ เพิ่มบัญชีเรียบร้อย');
+      }
+      
       const updateData = {
         domain: document.getElementById('domain').value.trim(),
         password: document.getElementById('password').value.trim(),
