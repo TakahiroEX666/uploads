@@ -1,16 +1,93 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>YouTube Playlists</title>
-  <!-- ใช้ onload เพื่อรอให้ gapi พร้อมก่อนเรียก -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My YouTube Playlists</title>
   <script src="https://apis.google.com/js/api.js?onload=onGapiLoad"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+  </style>
 </head>
 <body>
-  <h1>My YouTube Playlists</h1>
-  <button id="authorize-button">Authorize</button>
+  <h1>🎵 My YouTube Playlists</h1>
+  <button id="authorize-button" style="display: none;">Authorize</button>
   <ul id="playlist-list"></ul>
 
-  <!-- ต้องอยู่หลัง body เพื่อให้ DOM พร้อม -->
-  <script src="https://uploads-lqyr.onrender.com/app.js"></script>
+  <script>
+    console.log("✅ inline script loaded");
+
+    const CLIENT_ID = '1033109091843-agiajoi1bjo0sf3kd190t6m7b04uslp8.apps.googleusercontent.com';
+    const API_KEY = 'AIzaSyCtDTqUBRiJleHqQT8TDeu7qWn3USJopZA';
+    const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'];
+    const SCOPES = 'https://www.googleapis.com/auth/youtube.readonly';
+
+    const authorizeButton = document.getElementById('authorize-button');
+    const playlistList = document.getElementById('playlist-list');
+
+    // เรียกโดย gapi เมื่อโหลดเสร็จ
+    function onGapiLoad() {
+      console.log("✅ GAPI loaded");
+      gapi.load('client:auth2', initClient);
+    }
+
+    function initClient() {
+      gapi.client.init({
+        apiKey: API_KEY,
+        clientId: CLIENT_ID,
+        discoveryDocs: DISCOVERY_DOCS,
+        scope: SCOPES
+      }).then(() => {
+        console.log("✅ GAPI initialized");
+
+        authorizeButton.style.display = 'inline-block';
+        authorizeButton.onclick = () => {
+          console.log("🔘 Authorize clicked");
+          gapi.auth2.getAuthInstance().signIn().then(() => {
+            console.log("✅ Signed in");
+            listMyPlaylists();
+          }).catch(err => {
+            console.error("❌ Sign-in error", err);
+          });
+        };
+      }).catch(err => {
+        console.error("❌ GAPI init error", err);
+      });
+    }
+
+    function listMyPlaylists() {
+      gapi.client.youtube.playlists.list({
+        part: 'snippet,contentDetails',
+        mine: true,
+        maxResults: 10
+      }).then(response => {
+        playlistList.innerHTML = '';
+        const items = response.result.items;
+        if (items.length === 0) {
+          playlistList.innerHTML = '<li>ไม่พบ Playlist</li>';
+        } else {
+          items.forEach(pl => {
+            const li = document.createElement('li');
+            const url = `https://www.youtube.com/playlist?list=${pl.id}`;
+            li.innerHTML = `<a href="${url}" target="_blank">${pl.snippet.title}</a> (${pl.contentDetails.itemCount} วิดีโอ)`;
+            playlistList.appendChild(li);
+          });
+        }
+      }).catch(err => {
+        console.error("❌ Playlist fetch error", err);
+        playlistList.innerHTML = `<li>เกิดข้อผิดพลาด: ${err.message}</li>`;
+      });
+    }
+  </script>
 </body>
 </html>
