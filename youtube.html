@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>My YouTube Playlists</title>
+  <title>YouTube Playlists</title>
+  <!-- ใช้ onload เพื่อรอให้ gapi พร้อมก่อนเรียก -->
+  <script src="https://apis.google.com/js/api.js?onload=onGapiLoad"></script>
 </head>
 <body>
-    <h1>My YouTube Playlists</h1>
-    <button id="authorize-button">Authorize</button>
-    <ul id="playlist-list"></ul>
-    <script src="https://apis.google.com/js/api.js?onload=onGapiLoad"></script>
-    <script src="https://uploads-lqyr.onrender.com/app.js"></script>
+  <h1>My YouTube Playlists</h1>
+  <button id="authorize-button">Authorize</button>
+  <ul id="playlist-list"></ul>
+
+  <!-- ต้องอยู่หลัง body เพื่อให้ DOM พร้อม -->
+  <script src="https://uploads-lqyr.onrender.com/app.js"></script>
 </body>
 </html>
