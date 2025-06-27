@@ -92,5 +92,10 @@ function listMyPlaylists() {
     });
 }
 
+function onGapiLoad() {
+    gapi.load('client:auth2', initClient);
+}
+
+
 // โหลดไลบรารี API client และเริ่มกระบวนการยืนยันตัวตน
 gapi.load('client:auth2', initClient);
